@@ -5,9 +5,9 @@ from dotenv import load_dotenv
 
 
 load_dotenv()
+CITY = "Gomel"
 
 API_KEY = os.getenv('API_KEY')
-CITY = "Gomel"
 
 response_city = requests.get(f"http://api.openweathermap.org/geo/1.0/direct?q={CITY},BY&appid={API_KEY}")
 
