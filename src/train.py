@@ -33,11 +33,11 @@ def get_weather(lat: float, lon: float):
     return f"Now in {CITY} temp= {round(result['main']['temp'] - 273)} degrees"
 
 
-@patch('requests.get')
+@patch("requests.get")
 def test_get_weather(mock_get):
     mock_get.return_value.json.return_value = {"main": {"temp": 298}}
     assert get_weather(1, 1) == f"Now in {CITY} temp= {298 - 273} degrees"
-    mock_get.assert_called_once_with(f'https://api.openweathermap.org/data/2.5/weather?lat=1&lon=1&appid={API_KEY}')
+    mock_get.assert_called_once_with(f"https://api.openweathermap.org/data/2.5/weather?lat=1&lon=1&appid={API_KEY}")
 
 
 if __name__ == "__main__":
