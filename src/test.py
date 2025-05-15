@@ -1,4 +1,7 @@
-import datetime
+import logging
 
-date_obj = datetime.datetime(2025, 5, 14, 15, 5)
-print(date_obj)
+name = "Alice"
+age = 30
+
+# Выводим сообщение в лог
+logging.info(f"Имя: {name}, возраст: {age}")
