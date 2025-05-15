@@ -4,7 +4,6 @@ import os
 from dotenv import load_dotenv
 from unittest.mock import patch
 
-
 load_dotenv()
 CITY = "Gomel"
 
@@ -20,7 +19,6 @@ def get_coords(city):
 
 
 def get_weather(lat: float, lon: float):
-
     response_weather = requests.get(
         f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={API_KEY}"
     )
