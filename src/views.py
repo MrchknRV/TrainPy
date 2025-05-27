@@ -19,7 +19,7 @@ logger.setLevel(logging.DEBUG)
 def load_user_settings():
     try:
         logger.info("Загрузка пользовательских настроек")
-        with open("user_settings.json", "r", encoding="UTF-8") as f:
+        with open(PATH / "user_settings.json", "r", encoding="UTF-8") as f:
             return json.load(f)
     except Exception as ex:
         logger.error("Ошибка загрузки 'user_settings.json': %s", ex)
@@ -53,3 +53,39 @@ def get_date(date_time):
         now = datetime.now()
         start_month_obj = now.replace(day=1, hour=0, minute=0, second=0)
         return start_month_obj.strftime("%Y-%m-%d"), now.strftime("%Y-%m-%d")
+
+
+def get_currency(user_currencies):
+    result = {}
+    try:
+        url = f"https://www.cbr-xml-daily.ru/daily_json.js"
+        response = requests.get(url)
+        status_code = response.status_code
+        if status_code == 200:
+            for currency in user_currencies:
+                if currency in response.json()["Valute"]:
+                    result[currency] = response.json()["Valute"][currency]["Value"]
+                else:
+                    result[currency] = "Нет данных"
+        else:
+            return f"Не успешный запрос.\nКод ошибки: {status_code}."
+    except Exception as ex:
+        logger.error("Ошибка получения курсов %s", ex)
+    return result
+
+
+# def get_stock_prices(stocks):
+#     prices = {}
+#     for stock in stocks:
+#         logging.debug(f"Запрос цены для акции: {stock}")
+#         try:
+#             response = requests.get(
+#                 f"https://api.marketstack.com/v1/eod?access_key=df3caee3a4eb8c55e2af01775ca399c8&symbols=AAPL {stock}"
+#             )
+#             response.raise_for_status()  # Проверка на ошибки HTTP
+#             prices[stock] = response.json().get("price", None)
+#             logging.info(f"Успешно получена цена для {stock}: {prices[stock]}")
+#         except requests.RequestException as e:
+#             logging.error(f"Ошибка при получении цены для {stock}: {e}")
+#             prices[stock] = None
+#     return prices
