@@ -4,8 +4,8 @@ from functools import wraps
 from typing import Optional
 
 import pandas as pd
+from src.file_reader import reader_file_xlsx
 
-from config import BASIC_FILE_EXCEL
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -22,7 +22,7 @@ def log_report_to_file(filename):
             logger.info("Проверка: являются ли данные датафреймом")
             if isinstance(df, pd.DataFrame):
                 logger.info("Запись отчёта в файл")
-                df.to_json(filename, orient="records", lines=True, force_ascii=False)
+                df.to_json(filename, orient="records", lines=True, force_ascii=False, indent=4)
             else:
                 logger.error("Данные не являются датафреймом. В файл записаны не будут")
             return df
@@ -32,50 +32,50 @@ def log_report_to_file(filename):
     return wrapper
 
 
-def spending_by_category(transactions: pd.DataFrame, category: str, date: Optional[str] = None) -> dict:
+@log_report_to_file("spending.json")
+def spending_by_category(data: pd.DataFrame, category: str, date: Optional[str] = None) -> pd.DataFrame:
     """Функция для вычисления трат по категории за последние три месяца."""
 
-    if "Категория" in transactions.columns:
-        category_data = transactions["Категория"]
-        print(category_data)
-    else:
-        print("Столбец 'Категория' не найден.")
-        return {}
+    if "Категория" not in data.columns:
+        logger.error("Столбец 'Категория' не найден.")
+        return pd.DataFrame()
 
     if date is None:
         date = datetime.now()
     else:
         date = datetime.strptime(date, "%Y-%m-%d")
 
-    # Получение даты три месяца назад
     three_months_ago = date - timedelta(days=90)
-
-    # Фильтрация DataFrame по категории и дате
-    filtered_expenses = transactions[
-        (transactions["Категория"] == category)
-        & (transactions["Дата операции"] >= three_months_ago)
-        & (transactions["Дата операции"] <= date)
+    data["Дата операции"] = pd.to_datetime(data["Дата операции"], format="%d.%m.%Y %H:%M:%S")
+    filtered_expenses = data[
+        (data["Категория"] == category) & (data["Дата операции"] >= three_months_ago) & (data["Дата операции"] <= date)
     ]
 
-    # Проверка на наличие отфильтрованных расходов
+    # Если нет расходов, возвращаем DataFrame с информацией об этом
     if filtered_expenses.empty:
         logger.warning(f"Нет расходов для категории '{category}' за указанный период.")
-        return {
-            "category": category,
-            "total_expenses": 0,
-            "date_from": three_months_ago.strftime("%Y-%m-%d"),
-            "date_to": date.strftime("%Y-%m-%d"),
-        }
+        return pd.DataFrame(
+            {
+                "category": [category],
+                "total_expenses": [0],
+                "date_from": [three_months_ago.strftime("%Y-%m-%d")],
+                "date_to": [date.strftime("%Y-%m-%d")],
+            }
+        )
 
-    # Подсчет общих трат
+    # Создаем отчет в виде DataFrame
     total_expenses = filtered_expenses["Сумма операции"].sum()
+    report_df = pd.DataFrame(
+        {
+            "category": [category],
+            "total_expenses": [total_expenses],
+            "date_from": [three_months_ago.strftime("%Y-%m-%d")],
+            "date_to": [date.strftime("%Y-%m-%d")],
+        }
+    )
 
-    report = {
-        "category": category,
-        "total_expenses": total_expenses,
-        "date_from": three_months_ago.strftime("%Y-%m-%d"),
-        "date_to": date.strftime("%Y-%m-%d"),
-    }
+    logger.info(f"Отчет создан для категории '{category}'")
+    return report_df
 
-    logger.info(f"Отчет создан для категории '{category}': {report}")
-    return report
+
+print(spending_by_category(reader_file_xlsx("../data/operations.xlsx"), "Каршеринг", "2021-11-28"))
